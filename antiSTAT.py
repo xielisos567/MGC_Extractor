@@ -12,7 +12,7 @@ def main(input_dir, output_file):
 	for infile in glob.glob(f'{input_dir}/*/index.html'):
 		print (infile)
 		# MAGs 值
-		mags = os.path.abspath(infile).split('\\')[-2]
+		mags = os.path.abspath(infile).split('/')[-2]
 		with open(infile, "r", encoding="utf-8") as file:
 			html_content = file.read()
 			soup = BeautifulSoup(html_content, 'html.parser')

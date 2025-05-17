@@ -10,8 +10,8 @@ import pandas as pd
 
 def getRegion(html,product):
     region_list=[]
-    html = re.sub('\s','',html)
-    datas = re.findall('<divclass="regbutton(.*?)</div>',html)
+    html = re.sub(r'\s','',html)  #Fix regular expression here
+    datas = re.findall(r'<divclass="regbutton(.*?)</div>',html)  #Fix regular expression here
     for data in datas:
         #print(data)
         #print('*****')
@@ -24,7 +24,7 @@ def getRegion(html,product):
     return region_list
 def getGbk(html):
     gbk_dic={}
-    html = re.sub('\s', '', html)
+    html = re.sub(r'\s', '', html)  #Fix regular expression here
     html = re.sub('"',"'",html)
     #print(html)
     ids = re.findall("<divclass='page'id='(.*?)'style",html)[1:]
@@ -56,7 +56,7 @@ def getSequence(file):
                     except:
                         pass
                 gene_functions = [gene.replace('\n','').lower() for gene in gene_functions]
-                gene_functions = [re.sub('biosynthetic.*?rule-based-clusters\) ','',gene) for gene in gene_functions]
+                gene_functions = [re.sub(r'biosynthetic.*?rule-based-clusters\) ','',gene) for gene in gene_functions]  #Fix regular expression here
                 gene_functions = sorted(gene_functions)
                 if feature.type == 'CDS':
                     location = list(str(location).split(']')[0][1:].split(':'))
@@ -117,37 +117,55 @@ def delSequence(gen_rs):
                 new_gen_rs[key].append(va)
     return new_gen_rs
 
-def speciesExtract(species, species_info):
-    '''
-    提取物种信息
-    '''
-    try:
-        species_file = pd.read_table(species, usecols=[0,7,8], low_memory=False)
-    except:
-        species_file = pd.read_table(species, encoding='unicode_escape', usecols=[0,7,8], low_memory=False)
-    for i in range(species_file.shape[0]):
-        if str(species_file.iloc[i,2]) == 'nan':
-            species_info[species_file.iloc[i,0]] = species_file.iloc[i,1]
-        else:
-            species_info[species_file.iloc[i,0]] = ' '.join([species_file.iloc[i,1], str(species_file.iloc[i,2])])
+def speciesExtract(species, species_info, tax_level='s'):
+    """从物种文件提取指定分类层级信息
+    Args:
+        species: 物种文件路径
+        species_info: 需要更新的字典
+        tax_level: 分类层级 (d,p,c,o,f,g,s)
+    Returns:
+        更新后的物种字典 {编号: 分类名称}
+    """
+    level_index = {'d':0, 'p':1, 'c':2, 'o':3, 'f':4, 'g':5, 's':6}
+    with open(species, 'r') as f:
+        for line in f:
+            cells = line.strip().split('\t')
+            if len(cells) < 8:
+                continue
+            tax_str = cells[7]
+            
+            # Processing structured classification information
+            if ';' in tax_str and '__' in tax_str:
+                taxa = tax_str.split(';')
+                level = [t for t in taxa if t.startswith(f'{tax_level}__')]
+                if level:
+                    species_info[cells[0]] = level[0].split('__')[1]
+                else:
+                    # Fallback to species level information or original string
+                    species_info[cells[0]] = tax_str.split(';')[-1].split('__')[-1]
+            else:
+                # Direct use of unstructured information
+                species_info[cells[0]] = tax_str
     return species_info
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Get gene info')
     parser.add_argument("-i", '--inpath', required=True, help='input path, original data path')
-    # print('*****')
     parser.add_argument("-n", '--type', required=True, help="gene name")
     parser.add_argument("-o", '--out', required=True, help='output dir')
-    parser.add_argument("-s", '--specialg', required=False, default='TMA,bai_operon', help='special gene type')
+    # parser.add_argument("-s", '--specialg', required=False, default='TMA,bai_operon', help='special gene type')
     parser.add_argument("-g", '--gap', required=False, type=int, default=5, help='gap between two genes')
+    parser.add_argument("-t", "--tax_level", required=False, default='s', 
+                        choices=['d','p','c','o','f','g','s'],
+                        help='taxonomy level (d:Domain, p:Phylum, c:Class, o:Order, f:Family, g:Genus, s:Species)')
     args = parser.parse_args()
 
-    tag_folder=args.inpath#基因匹配
+    tag_folder=args.inpath	#matching genes
     product=args.type
     res_folder = args.out
     species_name_dic = {}
     for file in glob.glob(f'{tag_folder}/species/*txt'):
-        species_name_dic = speciesExtract(file, species_name_dic)
+        species_name_dic = speciesExtract(file, species_name_dic, args.tax_level)
     '''
     #print(file)
     o = 0
@@ -161,7 +179,7 @@ if __name__ == '__main__':
     for folder in os.listdir(tag_folder):
         try:
             if 'results_' in folder:
-                print(f'正在匹配文件夹--{folder}...')
+                print(f'Matching folders--{folder}...')
                 folder_name = folder.replace('results_', '')
                 ori_folder = f'{tag_folder}/{folder}'
                 ori_files = os.listdir(ori_folder)

@@ -68,7 +68,7 @@ def getSequence(file):
     return gen_sequence
 def getGene(product):
     gene_list = []
-    datas = open(f'{tag_folder}/gene_lable2/{product}.txt','r',encoding='utf-8').readlines()
+    datas = open(f'{tag_folder}/gene_label2/{product}.txt','r',encoding='utf-8').readlines()
     for data in datas:
         item = data.replace('\n','').split('/')
         gene_list.append(item) if ((not re.search('^$', data.strip())) and (item not in gene_list)) else ''

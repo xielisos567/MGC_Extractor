@@ -25,7 +25,7 @@ antismash --taxon bacteria --output-dir examples/thiopeptide/results_genome_file
 ### 2. Sequences extraction
 #### 2-1. Sequence extraction for gutSMASH (example):
 ```
-python3  MGC_Extractor.py  -n  carnitine_degradaion_caiTABCDE  -i  examples/caiTABCDE  -o  output_caiTABCDE
+python3  MGC_Extractor.py  -n  caiTABCDE  -i  examples/caiTABCDE  -o output_caiTABCDE -g 5 -t s
 ```
 #### 2-2. Sequence extraction for antiSMASH (example):
 ```
@@ -34,7 +34,7 @@ python3  MGC_Extractor.py  -n  thiopeptide  -i  examples/thiopeptide  -o  output
 
 ### 3. Statistics for antiSMASH annotations:
 ```
-python3  antiSTAT.py -i  data_path_antiSMASH_annotation -o  ./statics.xlsx
+python3  antiSTAT.py -i  data_path_antiSMASH_annotation -o  ./statistics.xlsx
 ```
 
 
